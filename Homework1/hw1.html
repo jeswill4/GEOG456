@@ -1,0 +1,50 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Box</title>
+</head>
+
+<style>
+    body {background-color: beige;
+    }
+
+    #daAquaBox {
+        position: absolute; 
+        top:25%;
+        width: 30%;
+        height: 30%;
+        background-color: aqua;
+    }
+
+    .daBlueBox { position: absolute;
+
+
+    }
+
+    h1{ position: relative;
+        text-align: center;
+        top: 25%
+    }
+
+</style> 
+<body>
+    <div id="daAquaBox"> 
+        <div class="daBluebox">
+            <h1 onclick="daAlert()">Hello there.</h1>
+        </div>
+    </div>
+
+
+</body>
+
+<script>
+    function daAlert() {
+        alert("The div was clicked")
+    }
+
+</script>
+</html>
