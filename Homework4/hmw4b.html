@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+        crossorigin=""/>
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
+    <title>Homework 4 Table</title>
+</head>
+<script src="./GDW_Barriers.js"></script>
+
+<style>
+    table {
+      font-family: Tahoma, sans-serif;
+      border-collapse: collapse;
+      width: 100%;
+      border-radius: 8px; 
+      overflow: hidden; 
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+    
+    td, th {
+      border: 1px solid #ebebe9;
+      text-align: left;
+      padding: 10px;
+    }
+    
+    tr:nth-child(even) {background-color: #ebeae9}
+</style>
+    
+<body>
+    <h2 style="font-family: 'Verdana', sans-serif; color: #022339;">Global Dam Watch Dataset</h2>
+    <h4 style="font-family: 'Verdana', sans-serif; color: #022339;">Assigned Color Based on Drainage Area. <span style="color: #db89df;">Light Purple</span> is above 1,000,000 km^2. <span style="color: #92c9ed">Light blue</span> is above 500,000 km^2.</h4>
+    <h4 style="font-family: 'Verdana', sans-serif; color: #022339;"><span style="color: orange;">Orange</span> for Years Unknown before Satellite Imagery in 1984. <span style="color: red;">Red</span> for No Years Added to Dataset.</h4>
+
+    <table id = "damTable">
+        <tr>
+            <th>Barrier Type</th>
+            <th>Main Use</th>
+            <th>Drainage Area (km^2)</th>
+            <th>Year</th>
+            <th>Country</th>
+        </tr>
+    </table>
+
+    <script>
+
+    //<th>Drainage Area</th>
+    //<th>Year</th>
+
+        var x = document.getElementById('damTable');
+    
+        data.features.forEach(element => {makeCell(element)});
+      
+    // function for cell creation and inputs 
+        function makeCell(e) {
+            var myNewRow = document.createElement('tr');
+            var myNewCell1 = document.createElement('td');
+            var myNewCell2 = document.createElement('td');
+            var myNewCell3 = document.createElement('td');
+            var myNewCell4 = document.createElement('td');
+            var myNewCell5 = document.createElement('td');
+
+
+            myNewCell1.innerHTML = e.properties.DAM_TYPE;
+            myNewCell2.innerHTML = e.properties.MAIN_USE;
+            myNewCell3.innerHTML = e.properties.CATCH_SKM;
+            //Some values of year are unavailable so the Pre-year is satellite imagery recordings starting in 1984
+            if (e.properties.YEAR_DAM != -99){
+                myNewCell4.innerHTML = e.properties.YEAR_DAM;
+            }
+            else if(e.properties.PRE_YEAR != -99){
+                myNewCell4.innerHTML = e.properties.PRE_YEAR;
+                myNewCell4.style.backgroundColor = "orange";
+            }
+            else {myNewCell4.innerHTML = "Unknown";
+                myNewCell4.style.backgroundColor = "red";
+            }
+
+            myNewCell5.innerHTML = e.properties.COUNTRY;
+            
+            //coloring 
+            myNewCell3.style.backgroundColor = coloredCell(e.properties.CATCH_SKM);
+
+            myNewRow.append(myNewCell1);
+            myNewRow.append(myNewCell2);
+            myNewRow.append(myNewCell3);
+            myNewRow.append(myNewCell4);
+            myNewRow.append(myNewCell5);
+            x.append(myNewRow);
+            }
+
+    // function for color change depending on drainage area
+        function coloredCell(value){
+            return (value>1000000) ? "#db89df":  //Dark blue
+            (value>500000) ? "#92c9ed":          //light blue
+            "";
+        }
+
+    </script>
+</body>
+</html>
+
