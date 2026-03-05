@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css"
+    integrity="sha512-hoalWLoI8r4UszCkZ5kL8vayOGVae1oxXe/2A4AO6J9+580uKHDO3JdHb7NzwwzK5xr/Fs0W40kiNHxM9vyTtQ=="
+    crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js"
+    integrity="sha512-BB3hKbKWOc9Ez/TAwyWxNXeoV9c1v6FIeYiBieIWkpLjauysF18NzgR1MBNBXf8/KABdlkX68nAhlwcDFLGPCQ=="
+    crossorigin=""></script>
+    <title>Dam Slider</title>
+    <script src="/GEOG456/Homework4/dams_shortened.js"></script>
+</head> 
+        
+<body>
+
+<h4>Homework 5: Barriers Dataset</h4>
+<h3 id="time_built">1984</h3>
+<input id="mySlider" type="range" name="dates" value="0" min="1985" max="2026" oninput="moveSlider(this.value)">
+    <div id="mapid"> </div>
+    <style>
+        #mapid{width: 95vw; 
+            height: 70vh; 
+            margin: auto;
+        }
+    </style>  
+
+
+
+<script>
+        
+
+    function circleIcon(){
+    var geojsonMarkerOptions = {
+    radius: 7,
+    fillColor: "#00f",
+    color: "#000",
+    weight: 1,
+    opacity: 1,
+    fillOpacity: 0.75
+    };
+    return geojsonMarkerOptions;
+    }
+
+
+    // put view over US, could redo this to start in asia? 
+    var map = L.map('mapid').setView([35.94, -79.0], 4); 
+
+    // Leaflet basemap variables
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
+    
+    var date_array = ['1985', '1986', '1987', '1988', '1989', '1990', '1991', '1992', '1993',
+    '1994', '1995', '1996', '1997', '1998', '1999', '2000', '2001', '2002', '2003', '2004',
+    '2005', '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013', '2014', '2015',
+    '2016', '2017', '2018', '2019', '2020', '2021', '2022', '2023', '2024', '2025', '2026'];
+
+    var y1985 = [];
+    var y1986 = [];
+    var y1987 = [];
+    var y1988 = [];
+    var y1989 = [];
+    var y1990 = [];
+    var y1991 = [];
+    var y1992 = [];
+    var y1993 = [];
+    var y1994 = [];
+    var y1995 = [];
+    var y1996 = [];
+    var y1997 = [];
+    var y1998 = [];
+    var y1999 = [];
+    var y2000 = [];
+    var y2001 = [];
+    var y2002 = [];
+    var y2003 = [];
+    var y2004 = [];
+    var y2005 = [];
+    var y2006 = [];
+    var y2007 = [];
+    var y2008 = [];
+    var y2009 = [];
+    var y2010 = [];
+    var y2011 = [];
+    var y2012 = [];
+    var y2013 = [];
+    var y2014 = [];
+    var y2015 = [];
+    var y2016 = [];
+    var y2017 = [];
+    var y2018 = [];
+    var y2019 = [];
+    var y2020 = [];
+    var y2021 = [];
+    var y2022 = [];
+    var y2023 = [];
+    var y2024 = [];
+    var y2025 = [];
+    var y2026 = [];
+
+    data.features.forEach(element => {date_data(element)});
+    function date_data(e){
+        var new_data = [];
+        //if year == year text then append total tot new data 
+        var year_txt = e.properties.YEAR_TXT.slice(-4);
+        if (year_txt == date_array[0]){
+            new_data.push(e)}
+        y1985.push(new_data);
+        if (year_txt == date_array[1]){
+            new_data.push(e)}
+        y1986.push(new_data);
+        if (year_txt == date_array[2]){
+            new_data.push(e)}
+        y1987.push(new_data)
+    };
+
+    myData = [y1985, y1986, y1987]
+    var barriers = L.geoJSON(myData[0], {
+        pointToLayer: function (feature, latlng) {
+        return L.circleMarker(latlng, circleIcon()).addTo(map);
+        }});
+    
+    function moveSlider(value){  // function called by the slider, with the value parameter: the value goes from 0 to 4
+        var dates = myData[value] // get the data based on the slider value
+        map.removeLayer(barriers);// leaflet method to remove a layer //drought.remove()  
+        barriers = L.geoJSON(dates, {
+            pointToLayer: function (feature, latlng) {
+            return L.circleMarker(latlng, circleIcon()).addTo(map);
+            }});
+        map.addLayer(barriers); // add the new layer
+        document.getElementById("time_built").innerHTML = date_array[value]//make this the year // change the text above the slider
+    }
+    moveSlider(0)
+
+</script>
+</body>
+</html>
