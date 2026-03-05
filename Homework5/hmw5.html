@@ -11,14 +11,15 @@
     integrity="sha512-BB3hKbKWOc9Ez/TAwyWxNXeoV9c1v6FIeYiBieIWkpLjauysF18NzgR1MBNBXf8/KABdlkX68nAhlwcDFLGPCQ=="
     crossorigin=""></script>
     <title>Dam Slider</title>
-    <script src="/GEOG456/Homework4/dams_shortened.js"></script>
+    <script src="./dams_shortened.js"></script>
 </head> 
-        
 <body>
 
-<h4>Homework 5: Barriers Dataset</h4>
-<h3 id="time_built">1984</h3>
-<input id="mySlider" type="range" name="dates" value="0" min="1985" max="2026" oninput="moveSlider(this.value)">
+<h2>Homework 5: Barriers Dataset</h4>
+<p>1985 was the start of satellite data collected, any year before that is attributed to the dam being 
+    built before 1985. This slider shows added barriers built each year.</p>
+<h3 id="time_built">1985</h3>
+<input id="mySlider" type="range" name="dates" value="0" min="0" max="41" oninput="moveSlider(this.value)">
     <div id="mapid"> </div>
     <style>
         #mapid{width: 95vw; 
@@ -27,35 +28,28 @@
         }
     </style>  
 
-
-
 <script>
-        
-
     function circleIcon(){
-    var geojsonMarkerOptions = {
-    radius: 7,
-    fillColor: "#00f",
-    color: "#000",
-    weight: 1,
-    opacity: 1,
-    fillOpacity: 0.75
-    };
-    return geojsonMarkerOptions;
+        var geojsonMarkerOptions = {
+            radius: 7,
+            fillColor: "#00f",
+            color: "#000",
+            weight: 1,
+            opacity: 1,
+            fillOpacity: 0.75
+        };
+        return geojsonMarkerOptions;
     }
 
-
-    // put view over US, could redo this to start in asia? 
     var map = L.map('mapid').setView([35.94, -79.0], 4); 
 
-    // Leaflet basemap variables
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
     
-    var date_array = ['1985', '1986', '1987', '1988', '1989', '1990', '1991', '1992', '1993',
-    '1994', '1995', '1996', '1997', '1998', '1999', '2000', '2001', '2002', '2003', '2004',
-    '2005', '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013', '2014', '2015',
-    '2016', '2017', '2018', '2019', '2020', '2021', '2022', '2023', '2024', '2025', '2026'];
+    var date_array = ['1985', '1986', '1987', '1988', '1989', '1990', '1991', '1992', '1993', '1994', '1995',
+'1996', '1997', '1998', '1999', '2000', '2001', '2002', '2003', '2004', '2005', '2006', '2007', '2008', '2009',
+'2010', '2011', '2012', '2013', '2014', '2015', '2016', '2017', '2018', '2019', '2020', '2021', '2022', '2023',
+'2024', '2025', '2026']
 
     var y1985 = [];
     var y1986 = [];
@@ -100,40 +94,70 @@
     var y2025 = [];
     var y2026 = [];
 
-    data.features.forEach(element => {date_data(element)});
-    function date_data(e){
-        var new_data = [];
-        //if year == year text then append total tot new data 
+    function ordered(e) {
         var year_txt = e.properties.YEAR_TXT.slice(-4);
-        if (year_txt == date_array[0]){
-            new_data.push(e)}
-        y1985.push(new_data);
-        if (year_txt == date_array[1]){
-            new_data.push(e)}
-        y1986.push(new_data);
-        if (year_txt == date_array[2]){
-            new_data.push(e)}
-        y1987.push(new_data)
+        if (year_txt <= '1985') { y1985.push(e); }
+        if (year_txt <= '1986') { y1986.push(e); }
+        if (year_txt <= '1987') { y1987.push(e); }
+        if (year_txt <= '1988') { y1988.push(e); }
+        if (year_txt <= '1989') { y1989.push(e); }
+        if (year_txt <= '1990') { y1990.push(e); }
+        if (year_txt <= '1991') { y1991.push(e); }
+        if (year_txt <= '1992') { y1992.push(e); }
+        if (year_txt <= '1993') { y1993.push(e); }
+        if (year_txt <= '1994') { y1994.push(e); }
+        if (year_txt <= '1995') { y1995.push(e); }
+        if (year_txt <= '1996') { y1996.push(e); }
+        if (year_txt <= '1997') { y1997.push(e); }
+        if (year_txt <= '1998') { y1998.push(e); }
+        if (year_txt <= '1999') { y1999.push(e); }
+        if (year_txt <= '2000') { y2000.push(e); }
+        if (year_txt <= '2001') { y2001.push(e); }
+        if (year_txt <= '2002') { y2002.push(e); }
+        if (year_txt <= '2003') { y2003.push(e); }
+        if (year_txt <= '2004') { y2004.push(e); }
+        if (year_txt <= '2005') { y2005.push(e); }
+        if (year_txt <= '2006') { y2006.push(e); }
+        if (year_txt <= '2007') { y2007.push(e); }
+        if (year_txt <= '2008') { y2008.push(e); }
+        if (year_txt <= '2009') { y2009.push(e); }
+        if (year_txt <= '2010') { y2010.push(e); }
+        if (year_txt <= '2011') { y2011.push(e); }
+        if (year_txt <= '2012') { y2012.push(e); }
+        if (year_txt <= '2013') { y2013.push(e); }
+        if (year_txt <= '2014') { y2014.push(e); }
+        if (year_txt <= '2015') { y2015.push(e); }
+        if (year_txt <= '2016') { y2016.push(e); }
+        if (year_txt <= '2017') { y2017.push(e); }
+        if (year_txt <= '2018') { y2018.push(e); }
+        if (year_txt <= '2019') { y2019.push(e); }
+        if (year_txt <= '2020') { y2020.push(e); }
+        if (year_txt <= '2021') { y2021.push(e); }
+        if (year_txt <= '2022') { y2022.push(e); }
+        if (year_txt <= '2023') { y2023.push(e); }
+        if (year_txt <= '2024') { y2024.push(e); }
+        if (year_txt <= '2025') { y2025.push(e); }
+        if (year_txt <= '2026') { y2026.push(e); }
     };
 
-    myData = [y1985, y1986, y1987]
-    var barriers = L.geoJSON(myData[0], {
-        pointToLayer: function (feature, latlng) {
-        return L.circleMarker(latlng, circleIcon()).addTo(map);
-        }});
+    data.features.forEach(element => {ordered(element)});
     
-    function moveSlider(value){  // function called by the slider, with the value parameter: the value goes from 0 to 4
-        var dates = myData[value] // get the data based on the slider value
-        map.removeLayer(barriers);// leaflet method to remove a layer //drought.remove()  
+    var myData = [y1985, y1986, y1987, y1988, y1989, y1990, y1991, y1992, y1993, y1994, y1995, 
+    y1996, y1997, y1998, y1999, y2000, y2001, y2002, y2003, y2004, y2005, y2006, y2007, y2008, 
+    y2009, y2010, y2011, y2012, y2013, y2014, y2015, y2016, y2017, y2018, y2019, y2020, y2021, 
+    y2022, y2023, y2024, y2025, y2026];
+
+    var barriers;
+    
+    function moveSlider(value){  
+        var dates = myData[value];
+        document.getElementById("time_built").innerHTML = date_array[value];
+        if (barriers) {map.removeLayer(barriers)};
         barriers = L.geoJSON(dates, {
             pointToLayer: function (feature, latlng) {
-            return L.circleMarker(latlng, circleIcon()).addTo(map);
-            }});
-        map.addLayer(barriers); // add the new layer
-        document.getElementById("time_built").innerHTML = date_array[value]//make this the year // change the text above the slider
+                return L.circleMarker(latlng, circleIcon())}}).addTo(map);
     }
-    moveSlider(0)
-
+    moveSlider(0);
 </script>
 </body>
 </html>
