@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>USA SPEI History Explorer</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; display: flex; }
+        
+        #sidebar { 
+            width: 380px; 
+            height: 100vh; 
+            background: rgb(255, 248, 231); 
+            color: whitesmoke; 
+            padding: 25px; 
+            box-sizing: border-box; 
+            z-index: 1000; 
+            box-shadow: 2px 0 10px rgba(0,0,0,0.5); 
+        }
+        
+        #map { flex-grow: 1; height: 100vh; background: #ddd; }
+        h2 { color: black; margin-top: 0; }
+        h5 { color: black; margin-top: 0; }
+        
+        .control-group { 
+            margin-bottom: 25px; 
+            background: #084594; 
+            padding: 15px; 
+            border-radius: 8px; 
+        }
+        
+        label { display: block; margin-bottom: 10px; font-weight: bold; }
+        input[type=range] { width: 100%; cursor: pointer; }
+        .val-display { float: right; color: whitesmoke; font-family: monospace; font-size: 1.1em; }
+
+        .info.legend {
+            padding: 10px;
+            font: 14px/16px Arial, Helvetica, sans-serif;
+            background: rgba(230,230,230,0.9);
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            border-radius: 5px;
+            line-height: 20px;
+            color: #333;
+        }
+        .info.legend i {
+            width: 18px; height: 18px; float: left; margin-right: 8px; opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+
+<div id="sidebar">
+    <h2>SPEI History of the USA</h2>
+    <h5>Mapping historical drought using the <b>SPEI Index</b>.</h5>
+
+    <div class="control-group">
+        <label>Year: <span id="yearVal" class="val-display">2026</span></label>
+        <input type="range" id="yearSlider" min="1926" max="2026" value="2026">
+    </div>
+
+    <div class="control-group">
+        <label>Target Month: <span id="monthLabel" class="val-display">March</span></label>
+        <input type="range" id="monthSlider" min="1" max="12" value="3">
+        <p style="font-size: 0.85em; margin-top: 10px; color: whitesmoke; font-weight: bold;">
+            Analysis Window: <span id="monthRangeVal" style="color: #fcd773;">March</span>
+        </p>
+    </div>
+
+    <div class="control-group">
+        <label>Timescale: <span id="scaleVal" class="val-display">1 Month</span></label>
+        <input type="range" id="scaleSlider" min="1" max="12" value="1">
+    </div>
+</div>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    let map, countyLayer;
+    let rawClimateData = null; // Store original structure to save memory
+    const countyBaselines = {}; 
+
+    const monthNames = ["January", "February", "March", "April", "May", "June", 
+                        "July", "August", "September", "October", "November", "December"];
+
+    const stateLookup = {"01":"AL","04":"AZ","05":"AR","06":"CA","08":"CO","09":"CT","10":"DE","11":"DC","12":"FL","13":"GA","16":"ID","17":"IL","18":"IN","19":"IA","20":"KS","21":"KY","22":"LA","23":"ME","24":"MD","25":"MA","26":"MI","27":"MN","28":"MS","29":"MO","30":"MT","31":"NE","32":"NV","33":"NH","34":"NJ","35":"NM","36":"NY","37":"NC","38":"ND","39":"OH","40":"OK","41":"OR","42":"PA","44":"RI","45":"SC","46":"SD","47":"TN","48":"TX","49":"UT","50":"VT","51":"VA","53":"WA","54":"WV","55":"WI","56":"WY"};
+
+    // Setup Map
+    map = L.map('map').setView([39.8, -87.0], 4);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
+
+    console.log("Starting data fetch...");
+
+    Promise.all([
+        fetch('us_conus_climate_1926_2026.json').then(res => res.json()),
+        fetch('NOAA_2026_US_Counties.json').then(res => res.json()) 
+    ]).then(([climate, geojson]) => {
+        console.log("Data received. Calculating baselines...");
+        rawClimateData = climate;
+
+        // 1. Calculate Historical PET Parameters for every county
+        Object.keys(rawClimateData).forEach(id => {
+            let totalI = 0, dataPoints = 0;
+            const years = Object.keys(rawClimateData[id]);
+            
+            years.forEach(dateKey => {
+                let tC = (rawClimateData[id][dateKey].temp - 32) * (5/9);
+                if (tC > 0) totalI += Math.pow(tC / 5, 1.514);
+                dataPoints++;
+            });
+
+            const annualI = (totalI / dataPoints) * 12;
+            const a = (6.75e-7 * Math.pow(annualI, 3)) - (7.71e-5 * Math.pow(annualI, 2)) + (1.792e-2 * annualI) + 0.49239;
+            
+            countyBaselines[id] = { I: annualI, a: a };
+        });
+
+        console.log("Baselines ready. Initializing map...");
+        initMap(geojson);
+    }).catch(err => {
+        console.error("CRITICAL ERROR:", err);
+        alert("Failed to load data. Check console (F12) and ensure you are using a local server.");
+    });
+
+    
+    function calculateSPEI(fips, yr, mo, scale) {
+        if (!fips || !rawClimateData) return 0;
+        
+        let fipsStr = String(fips).padStart(5, '0');
+        let stateAbbr = stateLookup[fipsStr.substring(0, 2)];
+        let id = stateAbbr + "-" + fipsStr.substring(2, 5);
+        
+        if (!rawClimateData[id]) return 0;
+
+        const baseline = countyBaselines[id];
+
+        // Helper: Get accumulated water balance (D) for a specific ending date
+        function getD(endYr, endMo) {
+            let balance = 0;
+            for (let i = 0; i < scale; i++) {
+                // Efficient date math without full Date objects
+                let d = endMo - i;
+                let y = parseInt(endYr);
+                while (d <= 0) { d += 12; y -= 1; }
+                let k = y + String(d).padStart(2, '0');
+                
+                let entry = rawClimateData[id][k];
+                if (entry) {
+                    let tC = (entry.temp - 32) * (5/9);
+                    let pMM = entry.precip * 25.4;
+                    let pet = (tC > 0) ? 16 * Math.pow((10 * tC) / baseline.I, baseline.a) : 0;
+                    balance += (pMM - pet);
+                } else {
+                    return null; // Missing data in the stack
+                }
+            }
+            return balance;
+        }
+
+        const currentD = getD(yr, mo);
+        if (currentD === null) return 0;
+
+        // Collect all historical balances for this same Month and Scale
+        let history = [];
+        for (let y = 1926; y <= 2026; y++) {
+            let hD = getD(y, mo);
+            if (hD !== null) history.push(hD);
+        }
+
+        if (history.length < 30) return 0;
+
+        // Simple Z-Score Standardization (Standardized Anomaly)
+        const mean = history.reduce((a, b) => a + b, 0) / history.length;
+        const std = Math.sqrt(history.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b, 0) / history.length);
+        
+        return std > 0 ? (currentD - mean) / std : 0;
+    }
+
+    // Colors exactly as NOAA ranks them
+    function getColor(s) {
+        if (s <= -2.0) return '#790909'; // D4
+        if (s <= -1.6) return '#EB0000'; // D3
+        if (s <= -1.3) return '#F5BA18'; // D2
+        if (s <= -0.8) return '#FCD773'; // D1
+        if (s <= -0.5) return '#ECF30E'; // D0
+        if (s >= 2.0)  return '#110981'; // W4
+        if (s >= 1.6)  return '#151BDC'; // W3
+        if (s >= 1.3)  return '#1586DC'; // W2
+        if (s >= 0.8)  return '#0EF3F3'; // W1
+        if (s >= 0.5)  return '#9FF30E'; // W0
+        return '#FFFFFF';
+    }
+
+        function initMap(geojson) {
+        countyLayer = L.geoJson(geojson, {
+            style: applyStyle,
+            onEachFeature: (f, l) => {
+                const fips = f.properties.FIPS || f.properties.GEOID;
+                const name = f.properties.COUNTYNAME || "County";
+                l.bindPopup(`<b>${name}</b><br>FIPS: ${fips}`);
+            }
+        }).addTo(map);
+        
+        // CALL THE LEGEND HERE
+        addLegend();
+        
+        updateUI();
+    }
+
+    function addLegend() {
+        const legend = L.control({position: 'topright'});
+        legend.onAdd = function () {
+            const div = L.DomUtil.create('div', 'info legend');
+            const grades = [2.0, 1.6, 1.3, 0.8, 0.5, 0, -0.5, -0.8, -1.3, -1.6, -2.0];
+            const labels = [
+                "W4: Exceptional Wet", "W3: Extreme Wet", "W2: Severe Wet", 
+                "W1: Moderate Wet", "W0: Abnormally Wet", "Normal", 
+                "D0: Abnormally Dry", "D1: Moderate Drought", "D2: Severe Drought", 
+                "D3: Extreme Drought", "D4: Exceptional Drought"
+            ];
+            const colors = [
+                '#110981', '#151BDC', '#1586DC', '#0EF3F3', '#9FF30E', '#FFFFFF',
+                '#ECF30E', '#FCD773', '#F5BA18', '#EB0000', '#790909'
+            ];
+
+            div.innerHTML = '<strong>SPEI Ranking</strong><br>';
+            for (let i = 0; i < labels.length; i++) {
+                div.innerHTML += '<i style="background:' + colors[i] + '"></i> ' + labels[i] + '<br>';
+            }
+            return div;
+        };
+        legend.addTo(map);
+    }
+
+    function applyStyle(feature) {
+        const yr = document.getElementById('yearSlider').value;
+        const mo = document.getElementById('monthSlider').value;
+        const sc = document.getElementById('scaleSlider').value;
+        const fips = feature.properties.FIPS || feature.properties.GEOID;
+        
+        const spei = calculateSPEI(fips, yr, mo, parseInt(sc));
+        return { fillColor: getColor(spei), weight: 0.3, color: 'white', fillOpacity: 0.8 };
+    }
+    function updateUI() {
+    const yr = document.getElementById('yearSlider').value;
+    const mo = parseInt(document.getElementById('monthSlider').value);
+    const sc = parseInt(document.getElementById('scaleSlider').value);
+
+    // Update the simple number/name labels
+    document.getElementById('yearVal').innerText = yr;
+    document.getElementById('monthLabel').innerText = monthNames[mo - 1];
+    document.getElementById('scaleVal').innerText = sc + (sc === 1 ? " Month" : " Months");
+
+    // Calculate the Analysis Window (e.g., "January to March")
+    let endDate = new Date(yr, mo - 1);
+    let startDate = new Date(yr, mo - 1);
+    startDate.setMonth(startDate.getMonth() - (sc - 1));
+
+    const startLabel = monthNames[startDate.getMonth()];
+    const endLabel = monthNames[endDate.getMonth()];
+    
+    // Add year if the window crosses back into the previous year
+    const startYearText = startDate.getFullYear() !== endDate.getFullYear() ? ` ${startDate.getFullYear()}` : "";
+    
+    const rangeText = (sc === 1) ? endLabel : `${startLabel}${startYearText} to ${endLabel}`;
+    document.getElementById('monthRangeVal').innerText = rangeText;
+
+    // Only redraw the map if this was called by an 'onchange' event
+    // or if we want to force a refresh
+    if (countyLayer) countyLayer.setStyle(applyStyle);
+}
+
+    // USE ONCHANGE: Recalculates only when you finish dragging. 
+    // This is required for 3,107 counties.
+    document.getElementById('yearSlider').onchange = updateUI;
+    document.getElementById('monthSlider').onchange = updateUI;
+    document.getElementById('scaleSlider').onchange = updateUI;
+</script>
+</body>
+</html>
+
+
+
