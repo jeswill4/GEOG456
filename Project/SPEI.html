@@ -87,7 +87,11 @@
 
     // Setup Map
     map = L.map('map').setView([39.8, -87.0], 4);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 20}).addTo(map);
 
     console.log("Starting data fetch...");
 
@@ -191,19 +195,61 @@
         return '#FFFFFF';
     }
 
-        function initMap(geojson) {
+    // Pop ups 
+    function getCountyStats(fips, yr, mo, scale) {
+        let fipsStr = String(fips).padStart(5, '0');
+        let stateAbbr = stateLookup[fipsStr.substring(0, 2)] || "??";
+        let id = stateAbbr + "-" + fipsStr.substring(2, 5);
+        if (!rawClimateData[id]) return null;
+        let totalTemp = 0, totalPrecip = 0, count = 0;
+        for (let i = 0; i < scale; i++) {
+            let d = mo - i;
+            let y = parseInt(yr);
+            while (d <= 0) { d += 12; y -= 1; }
+            let k = y + String(d).padStart(2, '0');
+            let entry = rawClimateData[id][k];
+            if (entry) {
+                totalTemp += entry.temp;
+                totalPrecip += entry.precip;
+                count++;
+            };
+        }
+        return {
+            state: stateAbbr,
+            avgTemp: (totalTemp / count).toFixed(1),
+            avgPrecip: (totalPrecip / count).toFixed(2),
+            spei: calculateSPEI(fips, yr, mo, scale).toFixed(2)
+        };
+    }
+
+
+
+    function initMap(geojson) {
         countyLayer = L.geoJson(geojson, {
             style: applyStyle,
-            onEachFeature: (f, l) => {
-                const fips = f.properties.FIPS || f.properties.GEOID;
-                const name = f.properties.COUNTYNAME || "County";
-                l.bindPopup(`<b>${name}</b><br>FIPS: ${fips}`);
+            onEachFeature: (feature, layer) => {
+                layer.bindPopup(() => {
+                    const yr = document.getElementById('yearSlider').value;
+                    const mo = parseInt(document.getElementById('monthSlider').value);
+                    const sc = parseInt(document.getElementById('scaleSlider').value);
+                    const fips = feature.properties.FIPS || feature.properties.GEOID;
+                    const name = feature.properties.COUNTYNAME || "County";
+                    
+                    const stats = getCountyStats(fips, yr, mo, sc);
+                    if (!stats) return `<b>${name}</b><br>No data available`;
+                    return `
+                        <div style="color: #333; font-family: sans-serif;">
+                            <b style="font-size: 1.1em;">${name}, ${stats.state}</b><hr style="margin: 5px 0;">
+                            <b>SPEI:</b> ${stats.spei}<br>
+                            <b>Avg Temp:</b> ${stats.avgTemp}°F<br>
+                            <b>Avg Precip:</b> ${stats.avgPrecip} in/mo
+                        </div>
+                    `;
+                }, { minWidth: 150 });
             }
         }).addTo(map);
         
-        // CALL THE LEGEND HERE
         addLegend();
-        
         updateUI();
     }
 
@@ -239,36 +285,37 @@
         const fips = feature.properties.FIPS || feature.properties.GEOID;
         
         const spei = calculateSPEI(fips, yr, mo, parseInt(sc));
-        return { fillColor: getColor(spei), weight: 0.3, color: 'white', fillOpacity: 0.8 };
+        return { fillColor: getColor(spei), weight: 0.3, color: 'black', fillOpacity: 1.0 };
     }
+
     function updateUI() {
-    const yr = document.getElementById('yearSlider').value;
-    const mo = parseInt(document.getElementById('monthSlider').value);
-    const sc = parseInt(document.getElementById('scaleSlider').value);
+        const yr = document.getElementById('yearSlider').value;
+        const mo = parseInt(document.getElementById('monthSlider').value);
+        const sc = parseInt(document.getElementById('scaleSlider').value);
 
-    // Update the simple number/name labels
-    document.getElementById('yearVal').innerText = yr;
-    document.getElementById('monthLabel').innerText = monthNames[mo - 1];
-    document.getElementById('scaleVal').innerText = sc + (sc === 1 ? " Month" : " Months");
+        // Update the simple number/name labels
+        document.getElementById('yearVal').innerText = yr;
+        document.getElementById('monthLabel').innerText = monthNames[mo - 1];
+        document.getElementById('scaleVal').innerText = sc + (sc === 1 ? " Month" : " Months");
 
-    // Calculate the Analysis Window (e.g., "January to March")
-    let endDate = new Date(yr, mo - 1);
-    let startDate = new Date(yr, mo - 1);
-    startDate.setMonth(startDate.getMonth() - (sc - 1));
+        // Calculate the Analysis Window (e.g., "January to March")
+        let endDate = new Date(yr, mo - 1);
+        let startDate = new Date(yr, mo - 1);
+        startDate.setMonth(startDate.getMonth() - (sc - 1));
 
-    const startLabel = monthNames[startDate.getMonth()];
-    const endLabel = monthNames[endDate.getMonth()];
-    
-    // Add year if the window crosses back into the previous year
-    const startYearText = startDate.getFullYear() !== endDate.getFullYear() ? ` ${startDate.getFullYear()}` : "";
-    
-    const rangeText = (sc === 1) ? endLabel : `${startLabel}${startYearText} to ${endLabel}`;
-    document.getElementById('monthRangeVal').innerText = rangeText;
+        const startLabel = monthNames[startDate.getMonth()];
+        const endLabel = monthNames[endDate.getMonth()];
+        
+        // Add year if the window crosses back into the previous year
+        const startYearText = startDate.getFullYear() !== endDate.getFullYear() ? ` ${startDate.getFullYear()}` : "";
+        
+        const rangeText = (sc === 1) ? endLabel : `${startLabel}${startYearText} to ${endLabel}`;
+        document.getElementById('monthRangeVal').innerText = rangeText;
 
-    // Only redraw the map if this was called by an 'onchange' event
-    // or if we want to force a refresh
-    if (countyLayer) countyLayer.setStyle(applyStyle);
-}
+        // Only redraw the map if this was called by an 'onchange' event
+        // or if we want to force a refresh
+        if (countyLayer) countyLayer.setStyle(applyStyle);
+    }
 
     // USE ONCHANGE: Recalculates only when you finish dragging. 
     // This is required for 3,107 counties.
