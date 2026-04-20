@@ -6,13 +6,14 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         body { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; display: flex; background: #111; }
-        #sidebar { width: 380px; height: 100vh; background: #1a1a1a; color: white; padding: 25px; box-sizing: border-box; z-index: 1000; box-shadow: 2px 0 10px rgba(0,0,0,0.5); overflow-y: auto; }
+        #sidebar { width: 380px; height: 100vh; background: #1a1a1a; color: white; padding: 20px; box-sizing: border-box; z-index: 1000; box-shadow: 2px 0 10px rgba(0,0,0,0.5); overflow-y: auto; }
         #map { flex-grow: 1; height: 100vh; background: #000; }
         h2 { margin-top: 0; color: #fcd773; }
         .control-group { margin-bottom: 20px; background: #333; padding: 15px; border-radius: 8px; }
-        label { display: block; margin-bottom: 10px; font-weight: bold; font-size: 0.9em; color: whitesmoke; }
-        .val-display { float: right; color: #fcd773; font-family: monospace; }
+        label { display: block; margin-bottom: 10px; font-weight: bold; font-size: 1.0em; color: whitesmoke; }
+        .val-display { float: right; color: #fcd773; font-family: bold; font-size: 1.0em}
         input[type=range] { width: 100%; cursor: pointer; }
+        
         
         .info.legend { padding: 10px; font: 12px Arial; background: rgba(30,30,30,0.9); color: white; border-radius: 5px; line-height: 18px; border: 1px solid #e7e7e7; }
         .info.legend i { width: 16px; height: 16px; float: left; margin-right: 8px; opacity: 0.8; border: 1px solid black; }
@@ -31,8 +32,8 @@
         /* This specifically targets the labels (the text next to the radio buttons) */
         .leaflet-control-layers-list label {
             color: #ffffff !important; 
-            font-size: 0.9em;
-            margin-bottom: 5px;
+            font-size: 1.00em;
+            margin-bottom: 4px;
             cursor: pointer}
 
         /* Optional: Changes the background when the menu is expanded */
@@ -48,7 +49,7 @@
 <body>
 
 <div id="sidebar">
-    <h2>SPEI, Temperature & Precipitation</h2>
+    <h2>Standardized Precipitation Evaporation Index</h2>
     <p style="font-size: 0.85em; color: whitesmoke;">US County-level Climate Variations from the past 100 year averages (1926-2026)</p>
 
     <div class="control-group">
@@ -66,9 +67,12 @@
         <input type="range" id="scaleSlider" min="1" max="12" value="1">
     </div>
 
-    <div style="background: #222; padding: 15px; border-radius: 8px; font-size: 0.9em;">
-        <strong>Current Analysis Window:</strong><br>
-        <span id="monthRangeVal" style="color: #fcd773;">March</span>
+    <div style="background: #222; padding: 10px; border-radius: 4px; font-size: 0.9em; margin-top: 10px;">
+        <strong>Current Analysis Window: <span id="monthRangeVal" style="color: #fcd773;">March</span></strong><br>
+    </div>
+
+    <div style="background: #222; padding: 10px; border-radius: 4px; font-size: 0.9em; margin-top: 10px;">
+        <strong>ENSO Status: <span id="ensoVal" style="color: #fcd773; font-weight: bold;">Neutral</span></strong><br>
     </div>
 </div>
 
@@ -80,6 +84,7 @@
     let rawClimateData = null;
     let activeVar = 'spei'; // Global tracker for variable toggle
     const countyBaselines = {};
+    let ensoData = {};
 
     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     const stateLookup = {"01":"AL","04":"AZ","05":"AR","06":"CA","08":"CO","09":"CT","10":"DE","11":"DC","12":"FL","13":"GA","16":"ID","17":"IL","18":"IN","19":"IA","20":"KS","21":"KY","22":"LA","23":"ME","24":"MD","25":"MA","26":"MI","27":"MN","28":"MS","29":"MO","30":"MT","31":"NE","32":"NV","33":"NH","34":"NJ","35":"NM","36":"NY","37":"NC","38":"ND","39":"OH","40":"OK","41":"OR","42":"PA","44":"RI","45":"SC","46":"SD","47":"TN","48":"TX","49":"UT","50":"VT","51":"VA","53":"WA","54":"WV","55":"WI","56":"WY"};
@@ -90,10 +95,11 @@
 
     Promise.all([
         fetch('slim_climate_data.json').then(res => res.json()),
-        fetch('NOAA_2026_US_Counties.json').then(res => res.json())
-    ]).then(([climate, geojson]) => {
+        fetch('NOAA_2026_US_Counties.json').then(res => res.json()),
+        fetch('enso_data.json').then(res => res.json())
+    ]).then(([climate, geojson, enso]) => {
         rawClimateData = climate;
-        
+        ensoData = enso;
         // 1. Pre-calculate baselines for PET math
         Object.keys(rawClimateData).forEach(id => {
             let totalI = 0, pts = 0;
@@ -261,10 +267,19 @@
         let start = new Date(yr, mo - 1);
         start.setMonth(start.getMonth() - (sc - 1));
         document.getElementById('monthRangeVal').innerText = (sc === 1) ? monthNames[mo-1] : `${monthNames[start.getMonth()]} to ${monthNames[mo-1]}`;
+        // New logic to update ENSO text
+        const status = ensoData[yr] || "Neutral";
+        const ensoEl = document.getElementById('ensoVal');
+        ensoEl.innerText = status;
+
+        // Visual cues: Red for warm phases, Blue for cool phases
+        if (status.includes("El Niño")) ensoEl.style.color = "#ff4d4d";
+        else if (status.includes("La Niña")) ensoEl.style.color = "#4d94ff";
+        else ensoEl.style.color = "#fcd773";
 
         if (countyLayer) countyLayer.setStyle((f) => ({ fillColor: getColors(calculateAnomaly(f.properties.FIPS || f.properties.GEOID, yr, mo, sc, activeVar)) }));
     }
-
+    
     document.querySelectorAll('input').forEach(i => i.onchange = updateUI);
 </script>
 </body>
