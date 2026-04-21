@@ -1,83 +1,132 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>USA Climate Variable Explorer</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <style>
-        body { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; display: flex; background: #111; }
-        #sidebar { width: 380px; height: 100vh; background: #1a1a1a; color: white; padding: 20px; box-sizing: border-box; z-index: 1000; box-shadow: 2px 0 10px rgba(0,0,0,0.5); overflow-y: auto; }
-        #map { flex-grow: 1; height: 100vh; background: #000; }
-        h2 { margin-top: 0; color: #fcd773; }
-        .control-group { margin-bottom: 20px; background: #333; padding: 15px; border-radius: 8px; }
-        label { display: block; margin-bottom: 10px; font-weight: bold; font-size: 1.0em; color: whitesmoke; }
-        .val-display { float: right; color: #fcd773; font-family: bold; font-size: 1.0em}
-        input[type=range] { width: 100%; cursor: pointer; }
+    <head>
+        <meta charset="UTF-8">
+        <title>USA Climate Variable Explorer</title>
         
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
         
-        .info.legend { padding: 10px; font: 12px Arial; background: rgba(30,30,30,0.9); color: white; border-radius: 5px; line-height: 18px; border: 1px solid #e7e7e7; }
-        .info.legend i { width: 16px; height: 16px; float: left; margin-right: 8px; opacity: 0.8; border: 1px solid black; }
+        <script>
+            window.MathJax = {
+                tex: {
+                    inlineMath: [['$', '$'], ['\\(', '\\)']],
+                    displayMath: [['$$', '$$'], ['\\[', '\\]']]
+                }
+            };
+        </script>
         
-        /* Popup Styling for Dark Mode */
-        .leaflet-popup-content-wrapper { background: #222 !important; color: #fff !important; border: 1px solid #444; }
-        .leaflet-popup-tip { background: #222 !important; }
-            /* This targets the entire container of the layer switcher */
-        .leaflet-control-layers {
-            background: rgba(0, 0, 0, 0.9) !important; /* Dark background */
-            color: #ffffff !important;                   /* Main text color */
-            border: 1px solid #e7e7e7 !important;           /* Subtle border */
-            border-radius: 8px;
-            padding: 10px}
-
-        /* This specifically targets the labels (the text next to the radio buttons) */
-        .leaflet-control-layers-list label {
-            color: #ffffff !important; 
-            font-size: 1.00em;
-            margin-bottom: 4px;
-            cursor: pointer}
-
-        /* Optional: Changes the background when the menu is expanded */
-        .leaflet-control-layers-expanded {
-            background: #222222 !important;
-            padding: 12px}
-
-        /* Pro tip: Makes the text turn gold when you hover over a layer option */
-        .leaflet-control-layers-list label:hover {
-            color: #fcd773 !important}
-    </style>
-</head>
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+        <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+        <style>
+            /* ... Keep all your existing CSS styles exactly as they are ... */
+            body { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; background: #111; overflow-x: hidden; }
+            #main-container { display: flex; width: 100%; height: 100vh; }
+            #sidebar { width: 380px; height: 100vh; background: #1a1a1a; color: white; padding: 20px; box-sizing: border-box; z-index: 1000; box-shadow: 2px 0 10px rgba(0,0,0,0.5); overflow-y: auto; }
+            #map { flex-grow: 1; height: 100vh; background: #000; }
+            h2 { margin-top: 0; color: #fcd773; }
+            .control-group { margin-bottom: 20px; background: #333; padding: 15px; border-radius: 8px; }
+            label { display: block; margin-bottom: 10px; font-weight: bold; font-size: 1.0em; color: whitesmoke; }
+            .val-display { float: right; color: #fcd773; font-weight: bold; font-size: 1.0em; }
+            input[type=range] { width: 100%; cursor: pointer; }
+            .info.legend { padding: 10px; font: 12px Arial; background: rgba(30,30,30,0.9); color: white; border-radius: 5px; line-height: 18px; border: 1px solid #e7e7e7; }
+            .info.legend i { width: 16px; height: 16px; float: left; margin-right: 8px; opacity: 0.8; border: 1px solid black; }
+            .leaflet-popup-content-wrapper { background: #222 !important; color: #fff !important; border: 1px solid #444; }
+            .leaflet-popup-tip { background: #222 !important; }
+            .leaflet-control-layers { background: rgba(0, 0, 0, 0.9) !important; color: #ffffff !important; border: 1px solid #e7e7e7 !important; border-radius: 8px; padding: 10px; }
+            .leaflet-control-layers-list label { color: #ffffff !important; font-size: 1.00em; margin-bottom: 4px; cursor: pointer; }
+            .leaflet-control-layers-expanded { background: #222222 !important; padding: 12px; }
+            .leaflet-control-layers-list label:hover { color: #fcd773 !important; }
+            #methodology { background: #111; color: #eee; padding: 40px 40px; border-top: 1px solid #333; }
+            #methodology h2 { color: #fcd773; text-align: center; margin-bottom: 20px; font-size: 2em; }
+            .method-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px; max-width: 1200px; margin: 0 auto; }
+            .method-card { background: #1a1a1a; padding: 15px; border-radius: 12px; border: 1px solid #333; transition: transform 0.2s; }
+            .method-card:hover { transform: translateY(-5px); border-color: #fcd773; }
+            .method-card h3 { color: #fcd773; margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 15px; }
+            .method-card p { font-size: 0.95em; line-height: 1.6; color: #ccc; }
+            .method-card .MathJax { color: #fcd773 !important; font-size: 1.1em !important; margin: 15px 0 !important; }
+        </style>
+    </head>
 <body>
-
-<div id="sidebar">
-    <h2>Standardized Precipitation Evaporation Index</h2>
-    <p style="font-size: 0.85em; color: whitesmoke;">US County-level Climate Variations from the past 100 year averages (1926-2026)</p>
-
-    <div class="control-group">
-        <label>Year: <span id="yearVal" class="val-display">2026</span></label>
-        <input type="range" id="yearSlider" min="1926" max="2026" value="2026">
+    <div id="main-container">
+        <div id="sidebar">
+            <h2>SPEI and Climate Mapping</h2>
+            <p style="font-size: 0.85em; color: whitesmoke;">US County-level Climate Variations from the past 100 year averages (1926-2026)</p>
+    
+            <div class="control-group">
+                <label>Year: <span id="yearVal" class="val-display">2026</span></label>
+                <input type="range" id="yearSlider" min="1926" max="2026" value="2026">
+            </div>
+    
+            <div class="control-group">
+                <label>Month: <span id="monthLabel" class="val-display">March</span></label>
+                <input type="range" id="monthSlider" min="1" max="12" value="3">
+            </div>
+    
+            <div class="control-group">
+                <label>Timescale: <span id="scaleVal" class="val-display">1 Month</span></label>
+                <input type="range" id="scaleSlider" min="1" max="12" value="1">
+            </div>
+    
+            <div style="background: #222; padding: 10px; border-radius: 4px; font-size: 0.9em; margin-top: 10px;">
+                <strong>Current Analysis Window: <span id="monthRangeVal" style="color: #fcd773;">March</span></strong><br>
+            </div>
+    
+            <div style="background: #222; padding: 10px; border-radius: 4px; font-size: 0.9em; margin-top: 10px;">
+                <strong>ENSO Status: <span id="ensoVal" style="color: #fcd773; font-weight: bold;">Neutral</span></strong><br>
+            </div>
+        </div>
+    
+        <div id="map"></div>
     </div>
-
-    <div class="control-group">
-        <label>Month: <span id="monthLabel" class="val-display">March</span></label>
-        <input type="range" id="monthSlider" min="1" max="12" value="3">
+    
+    <div id="methodology">
+        <h2>Terms And Equations</h2>
+        <div class="method-grid">
+            <div class="method-card">
+                <h3>SPEI Calculation</h3>
+                <p>The Standardized Precipitation-Evapotranspiration Index (SPEI) accounts for both water supply and demand. The climatic water balance $D$ is defined as:</p>
+                <div style="text-align:center;">$$D_{i} = P_{i} - PET_{i}$$</div>
+                <div style="text-align:center; font-size: 0.8em;">
+                    $$\text{Balance } (D_{i}) = \text{Supply } (P_{i}) - \text{Demand } (PET_{i})$$
+                </div>
+                <div style="text-align:center;">$$\text{ } $$</div>
+                <p>Potential Evapotranspiration ($PET$) is calculated using the <b>Thornthwaite Equation.</b></p>
+                <p>$P_{i}$ is calculated as the average <b>precipitation</b> over the selected timescale. This is later balanced by the $\mu$ term in the z-score calculation.</p>
+            </div>
+            <div class = "method-card">
+                <h3>Thornthwaite Equation</h3>
+                <div style="text-align:center;">$$PET = 16 \left( \frac{10T}{I} \right)^{a}$$</div>
+                <p><strong>Annual Heat Index ($I$)</strong>: This is the sum of 12 monthly heat indices calculated from the 100-year historical mean temperatures per county.</p>
+                <div style="display: flex; justify-content: space-around; align-items: center; margin: 20px 0; background: #222; padding: 15px; border-radius: 8px;">
+                    <div style="text-align: center;">
+                        <span style="font-size: 0.8em; color: #888;">Monthly Index</span>
+                        $$i = \left( \frac{T}{5} \right)^{1.514}$$
+                    </div>
+                    <div style="font-size: 2em; color: #444;">&rarr;</div>
+                    <div style="text-align: center;">
+                        <span style="font-size: 0.8em; color: #888;">Annual Sum</span>
+                        $$I = \sum_{m=1}^{12} i_m$$
+                    </div>
+                </div>
+                <p><strong>$a$</strong>: Exponent is a cubic function of $I$. <b>Latitude</b> is implemented in this variable to act as a weight of <b>temperature change</b> in the Thornthwaite equation.</p>
+                </p>
+            </div>
+    
+            <div class="method-card">
+                <h3>Standardized Anomalies</h3>
+                <p>All variables are converted to <b>Z-scores</b> based on the 100-year historical baseline (1926–2026) and then displayed in the map layers above. This identifies how many standard deviations a value is from the mean ($\mu$):</p>
+                <div style="text-align:center;">$$z = \frac{x - \mu}{\sigma}$$</div>
+                <p>A score of $0$ represents the historical norm. $\sigma$ is the standard deviation term, which is the amount of fluctation of $x$.</p>
+                <p>$\mu$ is the mean of the timescale selected over the 100-year. This balances the $P$ term which is also only based on the timescale selected.</p>
+            </div>
+    
+            <div class="method-card">
+                <h3>ENSO Data Sourcing</h3>
+                <p>ENSO classifications are based on the <b>Oceanic Niño Index (ONI)</b> from the <b>NOAA Climate Prediction Center</b> (1950–Present). Earlier classifications (1926–1949) utilize historical reconstructions from the <b>NOAA Physical Sciences Laboratory</b>. As of early 2026, conditions are <b>Neutral</b> following the transition from the 2023–2024 El Niño.</p>
+            </div>
+        </div>
     </div>
-
-    <div class="control-group">
-        <label>Timescale: <span id="scaleVal" class="val-display">1 Month</span></label>
-        <input type="range" id="scaleSlider" min="1" max="12" value="1">
-    </div>
-
-    <div style="background: #222; padding: 10px; border-radius: 4px; font-size: 0.9em; margin-top: 10px;">
-        <strong>Current Analysis Window: <span id="monthRangeVal" style="color: #fcd773;">March</span></strong><br>
-    </div>
-
-    <div style="background: #222; padding: 10px; border-radius: 4px; font-size: 0.9em; margin-top: 10px;">
-        <strong>ENSO Status: <span id="ensoVal" style="color: #fcd773; font-weight: bold;">Neutral</span></strong><br>
-    </div>
-</div>
-
-<div id="map"></div>
-
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
     let map, countyLayer, legendControl;
@@ -209,14 +258,14 @@
 
         // --- LAYER CONTROL ---
         const variableSelection = {
-            "Drought (SPEI)": L.layerGroup().addTo(map),
+            "SPEI": L.layerGroup().addTo(map),
             "Temperature Anomaly": L.layerGroup(),
             "Precipitation Anomaly": L.layerGroup()
         };
         L.control.layers(variableSelection, null, { collapsed: false }).addTo(map);
 
         map.on('baselayerchange', (e) => {
-            if (e.name.includes("Drought")) activeVar = 'spei';
+            if (e.name.includes("SPEI")) activeVar = 'spei';
             else if (e.name.includes("Temperature")) activeVar = 'temp';
             else activeVar = 'precip';
             updateUI();
@@ -232,7 +281,7 @@
         legendControl = L.control({position: 'topright'});
         legendControl.onAdd = function() {
             let div = L.DomUtil.create('div', 'info legend');
-            let titles = { spei: "Drought (SPEI)", temp: "Temp Anomaly", precip: "Precip Anomaly" };
+            let titles = { spei: "SPEI", temp: "Temperature Anomaly", precip: "Precipitation Anomaly" };
             let colors, labels;
 
             if (activeVar === 'spei') {
