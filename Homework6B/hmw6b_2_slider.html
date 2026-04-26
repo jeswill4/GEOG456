@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three Image Slider: Utah</title>
+    <style>
+        body {
+            background-color: rgb(58, 58, 58); 
+            margin: 20px;
+            font-family: sans-serif;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        h1 {
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        /* --- TWO-COLUMN LAYOUT --- */
+        .content-wrapper {
+            display: flex;
+            flex-wrap: wrap; 
+            gap: 40px; 
+            align-items: flex-start; 
+        }
+
+        .left-column {
+            flex: 2; 
+            min-width: 450px; 
+            max-width: 800px;
+        }
+
+        .right-column {
+            flex: 1; 
+            min-width: 300px;
+        }
+
+        p {
+            color: white;
+            line-height: 1.6;
+            margin-top: 30px; /* Added margin to separate text from the slider */
+            font-size: 1.1rem;
+        }
+
+        /* --- SLIDER STYLING --- */
+        datalist {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            width: 100%; /* Changed to 100% to fill the column */
+            max-width: 400px; /* Keeps it from getting too wide */
+        }
+
+        option {
+            padding: 0;
+        }
+
+        input {
+            width: 100%; /* Changed to 100% */
+            max-width: 400px;
+            margin: 0;
+        }
+
+        /* --- IMAGE CONTAINER STYLING --- */
+        div#image_container {
+            position: relative;
+            margin-top: 0px; /* Removed top margin so the image moves up */
+            width: 100%;
+            height: 600px; /* Adjust this height based on your image dimensions! */
+        }
+
+        img {
+            width: 90%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        /* Z-index stacks the images. 1 is bottom, 3 is top. */
+        #img2014 {
+            z-index: 1;
+            opacity: 1; 
+        }
+        #img2018 {
+            z-index: 2;
+            opacity: 0;
+        }
+        #img2021 {
+            z-index: 3;
+            opacity: 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>3 Images of Utah, Roosevelt at 3 Different Times</h1>
+    
+    <div class="content-wrapper">
+        
+        <div class="left-column">
+            <div id="image_container">
+                <img id="img2014" src="./2014_utah_histmatch.png" alt="2014 Image">
+                <img id="img2018" src="./2018_utah.png" alt="2018 Image">
+                <img id="img2021" src="./2021_utah_histmatch.png" alt="2021 Image">
+            </div>
+        </div>
+
+        <div class="right-column">
+    
+            <input type="range" id="yearSlider" name="yearSlider" list="tickmarks" min="0" max="100" value="0" oninput="fadeImages(this.value)"/>
+            
+            <datalist id="tickmarks">
+                <option value="0" label="2014"></option>
+                <option value="50" label="2018"></option>
+                <option value="100" label="2021"></option>
+            </datalist>
+
+            <p>These three images of the Roosevelt, Utah area are USDA's NAIP aerial photographs of the years 2014, 2018, and 2021.
+            Images were at a 0.6 meter pixel resolution, of the average value of the given year, pulled as a tiff file that was then converted to png file format in QGIS.
+            You can see the destruction of the middle building from 2014 to 2018 that is then rebuilt in 2021. 
+            The changes in the baseball field over time are also interesting. 
+            </p>
+        </div>
+
+    </div>
+
+    <script>
+        function fadeImages(val) {
+            var img2018 = document.getElementById("img2018");
+            var img2021 = document.getElementById("img2021");
+
+            // Slider is between 0 and 50 (Transitioning 2014 to 2018)
+            if (val <= 50) {
+                img2018.style.opacity = val / 50; 
+                img2021.style.opacity = 0; 
+            } 
+            // Slider is between 50 and 100 (Transitioning 2018 to 2021)
+            else {
+                img2018.style.opacity = 1; 
+                img2021.style.opacity = (val - 50) / 50; 
+            }
+        }
+    </script>
+</body>
+</html>

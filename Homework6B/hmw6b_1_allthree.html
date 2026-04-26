@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three images displayed at once</title>
+    <style>
+    body {
+        margin: 10; /* Remove default margin */
+        padding: 0; /* Remove default padding */
+        overflow-x: hidden; /* Prevent overflow: something you might want to have for maps on a cellphone screen */
+        background-color: white; /* Just for demonstration */
+        color: white;
+        
+      }
+      .row {
+        width: 97vw;
+        background-color: rgb(58, 58, 58); /* Just for demonstration */
+        padding: 0px;
+        border: 3px solid black;
+        display: flex;
+      }
+
+      p {
+        color: black;
+        padding-top: 1%;
+        padding-right: 5%;
+        padding-left: 5%;
+      }
+      
+      /* Creates three equal columns */
+      .column {
+        flex: 30%;
+        padding: 10px;
+        overflow: hidden; /* Prevent overflow */
+      }
+
+      h1 {
+        color: black;
+      }
+    </style>
+
+</head>
+
+
+<body>
+    
+    <h1>3 Images of Utah, Roosevelt at 3 Different Times</h1>
+    <div class="row">
+        <div class="column">
+            <h3>Year: 2014</h3>
+            <h5>Histogram Matched to 2018</h5> 
+          <img  src="./2014_utah_histmatch.png" alt="2014" style="width:100%">
+        </div>
+        <div class="column">
+            <h3>Year: 2018</h3>
+            <h5>Histogram Basis</h5> 
+            <img  src="./2018_utah.png" alt="2018" style="width:100%">
+        </div>
+        <div class="column">
+            <h3>Year: 2021</h3>
+            <h5>Histogram Matched to 2018</h5> 
+            <img  src="./2021_utah_histmatch.png" alt="2021" style="width:100%">
+        </div>
+    </div>
+    <p>These three images of the Roosevelt, Utah area are USDA's NAIP aerial photographs of the years 2014, 2018, and 2021.
+      Images were at a 0.6 meter pixel resolution, of the average value of the given year, pulled as a tiff file that was then converted to png file format in QGIS. 
+      You can see the destruction of the middle building from 2014 to 2018 that is then rebuilt in 2021. 
+      The changes in the baseball field over time are also interesting. 
+    </p>
+</body>
+</html>
