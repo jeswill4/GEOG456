@@ -45,6 +45,7 @@
             .method-card h3 { color: #fcd773; margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 15px; }
             .method-card p { font-size: 0.95em; line-height: 1.6; color: #ccc; }
             .method-card .MathJax { color: #fcd773 !important; font-size: 1.1em !important; margin: 15px 0 !important; }
+            .dark-osm-tiles {filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);}
         </style>
     </head>
 <body>
@@ -141,9 +142,14 @@
     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     const stateLookup = {"01":"AL","04":"AZ","05":"AR","06":"CA","08":"CO","09":"CT","10":"DE","11":"DC","12":"FL","13":"GA","16":"ID","17":"IL","18":"IN","19":"IA","20":"KS","21":"KY","22":"LA","23":"ME","24":"MD","25":"MA","26":"MI","27":"MN","28":"MS","29":"MO","30":"MT","31":"NE","32":"NV","33":"NH","34":"NJ","35":"NM","36":"NY","37":"NC","38":"ND","39":"OH","40":"OK","41":"OR","42":"PA","44":"RI","45":"SC","46":"SD","47":"TN","48":"TX","49":"UT","50":"VT","51":"VA","53":"WA","54":"WV","55":"WI","56":"WY"};
     
-    // Setup Dark Map
-    map = L.map('map').setView([39.8, -90.0], 4);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+    // Initialize standard OpenStreetMap tiles
+    const darkOSMTiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    className: 'dark-osm-tiles'});
+
+    // Add it to your map
+    darkOSMTiles.addTo(map);
     
     Promise.all([
         fetch('slim_climate_data.json').then(res => res.json()),
