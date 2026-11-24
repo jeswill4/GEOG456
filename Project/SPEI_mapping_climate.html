@@ -138,17 +138,21 @@
     let activeVar = 'spei'; // Global tracker for variable toggle
     const countyBaselines = {};
     let ensoData = {};
-
     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     const stateLookup = {"01":"AL","04":"AZ","05":"AR","06":"CA","08":"CO","09":"CT","10":"DE","11":"DC","12":"FL","13":"GA","16":"ID","17":"IL","18":"IN","19":"IA","20":"KS","21":"KY","22":"LA","23":"ME","24":"MD","25":"MA","26":"MI","27":"MN","28":"MS","29":"MO","30":"MT","31":"NE","32":"NV","33":"NH","34":"NJ","35":"NM","36":"NY","37":"NC","38":"ND","39":"OH","40":"OK","41":"OR","42":"PA","44":"RI","45":"SC","46":"SD","47":"TN","48":"TX","49":"UT","50":"VT","51":"VA","53":"WA","54":"WV","55":"WI","56":"WY"};
-    
+
+    // 1. Initialize the map first!
+    map = L.map('map').setView([39.8, -90.0], 4);
+
+    // 2. Add the styled OpenStreetMap tiles
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    subdomains: ['a', 'b', 'c'],
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    className: 'dark-osm-tiles' // If using the CSS filter method from before
+        maxZoom: 19,
+        subdomains: ['a', 'b', 'c'],
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        className: 'dark-osm-tiles'
     }).addTo(map);
-    
+
+    // 3. Load your data
     Promise.all([
         fetch('slim_climate_data.json').then(res => res.json()),
         fetch('NOAA_2026_US_Counties.json').then(res => res.json()),
@@ -156,12 +160,12 @@
     ]).then(([climate, geojson, enso]) => {
         rawClimateData = climate;
         ensoData = enso;
-        // 1. Pre-calculate baselines for PET math
+        
         Object.keys(rawClimateData).forEach(id => {
             let totalI = 0, pts = 0;
             Object.keys(rawClimateData[id]).forEach(k => {
                 let entry = rawClimateData[id][k];
-                let tC = (entry[0] - 32) * (5/9); // entry[0] is temp
+                let tC = (entry[0] - 32) * (5/9); 
                 if (tC > 0) totalI += Math.pow(tC / 5, 1.514);
                 pts++;
             });
@@ -172,7 +176,7 @@
 
         initMap(geojson);
     });
-
+    
     function calculateAnomaly(fips, yr, mo, scale, type) {
         let fipsStr = String(fips).padStart(5, '0');
         let state = stateLookup[fipsStr.substring(0, 2)];
